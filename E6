@@ -1,0 +1,283 @@
+Experiemnt 6 :
+
+Note : Following class demo is for Maven, for Gradle, studenst need to do as Homework assignment. 
+
+Jenkins is compatible with JDK 17 or above while Maven is compatible with  JDK 8 mostly. 
+
+Use following command to select installed JDK version :
+
+sudo update-alternatives --config java
+
+Step 1 :  Create a maven and  a  ( gradle project, homework ) ( Done in experiment 2,3  )
+
+Select JDK 8
+
+mvn archetype:generate -DgroupId=com.example -DartifactId=hello-maven -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false 
+
+cd hello-maven
+
+// UPDATE POM file if needed
+
+mvn package // to check if maven project works in local system
+
+mvn clean package 
+// delete the package files 
+
+Step 2 : Install Jenkins and run ( Done in experiment 5 ) 
+
+Change JDK version  ( 17, 21 )
+
+sudo apt update
+1.sudo apt install openjdk-21-jdk -y
+2.sudo wget -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+3.echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+4.sudo apt update
+5.sudo apt install jenkins -y
+6.sudo systemctl status jenkins
+
+To get administrator key, command is :  
+
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+8.Now copy the key and login
+
+
+
+
+Step 3 : Setup git and github
+ 
+Git token :
+
+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
+
+
+Commands to install git and  connect to github vis ssh authentication: 
+
+# Install Git
+sudo apt update && sudo apt install git -y
+
+git --version
+
+
+# Configure Git (Replace with your details)
+git config --global user.name "Your Name"
+git config --global user.email "your-email@example.com"
+git config --global init.defaultBranch main
+
+# Generate SSH Key (Press Enter for defaults)
+ssh-keygen -t rsa -b 4096 -C "your-email@example.com" -f ~/.ssh/id_rsa -N ""
+
+# Start SSH agent & add key
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_rsa
+
+# Print SSH key (Copy this manually and add to GitHub SSH keys)
+cat ~/.ssh/id_rsa.pub
+
+# Pause to allow you to add the key on GitHub
+read -p "Go to GitHub > Settings > SSH Keys, add the copied key, then press Enter to continue..."
+
+# Test SSH connection to GitHub
+ssh -T git@github.com
+
+
+// Create a new repository on github using CURL, you will have to generate tokens by going to Settings >> Developor settings >>  Tokens classic >> Generate new token
+
+# Github PAT tokens nneded to create repository
+Generate a New PAT on GitHub 
+
+1️⃣ Go to GitHub PAT Settings in your GitHub account.
+2️⃣ Click "Generate new token (classic)" under the Personal Access Tokens section.
+3️⃣ Give your token a name (e.g., "GitHub API Token") for easy identification.
+4️⃣ Set Expiration → Choose "No expiration" or set a duration as needed.
+5️⃣ Select Permissions (Scopes):
+✅ repo → Full control of private repositories (Required)
+✅ delete_repo → (Optional) Allows deleting repositories
+6️⃣ Click "Generate Token" to create the token.
+7️⃣ Copy and save your token securely, as you won’t be able to see it again.
+8️⃣ Go to your terminal or command line.
+9️⃣ Store the token securely using a credentials manager or environment variable.
+🔟 Authenticate GitHub API requests by using the token instead of a password.
+1️⃣1️⃣ Use the token for Git operations when pushing or pulling via HTTPS.
+1️⃣2️⃣ (Optional) Configure Git to use the token automatically to avoid repeated authentication.
+1️⃣3️⃣ Verify the token works by testing authentication with GitHub.
+
+
+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
+
+# Create GitHub repository via API (Replace 'your-username' with actual username)
+curl -H "Authorization: token YOUR_TOKEN" \
+     -d '{"name":"hello-maven", "private":false}' \
+     https://api.github.com/user/repos
+
+
+Breakdown of the Command:
+curl -H "Authorization: token YOUR_TOKEN"
+→ Sends an authenticated request using your Personal Access Token (PAT).
+-d '{"name":"hello-maven", "private":false}'
+→ Sends a JSON payload with the repository name "hello-maven" and sets it as public (private: false).
+https://api.github.com/user/repos
+→ GitHub API endpoint for creating a new repository under your account.
+
+
+
+Commands to push local repo to github
+
+
+
+echo "# hello-maven" >> README.md  # Create README file
+git init                            # Initialize Git repo
+git add .                           # Stage ALL files
+git commit -m "first commit"        # Commit everything
+git branch -M main                  # Rename branch to 'main'
+git remote add origin git@github.com:azadCMRIT/hello-maven.git  # Add GitHub remote
+git push -u origin main             # Push to GitHub
+
+
+
+
+ 
+
+Prerequisites:
+1.Maven Project
+2.Git installed on Ubuntu
+3.Github account 
+4.Jenkins Installed and Plugins: Install necessary plugins like "Maven Integration Plugin" and "Pipeline" in Jenkins.
+5.Ssh public key added to Github account.
+
+
+
+Go to Jenkins :
+
+Note : Change JDK Version to 8 because you need to run maven project in local machine
+Create a New Jenkins Job 
+1. Log into Jenkins: 
+o Open your web browser and navigate to your Jenkins URL (e.g.,  http://localhost:8080 or your cloud instance URL). 
+o Log in with your admin credentials.
+2. Create a New Job: 
+o On the Jenkins dashboard, click on “New Item”. 
+o Enter an Item Name: For example, Maven-CI (or Gradle-CI if you prefer  Gradle). 
+
+ Select “Pipeline project”
+
+Select GitHub project
+Put Project url  ( https://github.com/azadCMRIT/hello-maven.git )
+
+
+
+3. Enter Pipeline script:
+
+pipeline {
+
+	agent any
+
+	stages {
+
+    	stage('Checkout') {
+
+        	steps {
+
+            	git branch: 'main', url: 'https://github.com/azadCMRIT/hello-maven.git' // Replace with your repository URL
+
+        	}
+
+    	}
+
+    	stage('Build') {
+
+        	steps {
+
+            	// Use 'mvn clean package' for Maven or 'gradle build' for Gradle
+
+            	sh 'mvn clean package'
+
+        	}
+
+    	}
+
+    	stage('Test') {
+
+        	steps {
+
+            	// Run unit tests using Maven or Gradle
+
+            	sh 'mvn test'
+
+        	}
+
+    	}
+
+    	// Add additional stages for deployment, code analysis, etc. as needed
+
+	}
+
+}
+Select Use Groovy Sandbox
+Select Apply, Save
+Build 
+See Console output
+
+Explanation of experimetnt 6 : 
+
+
+What is SSH?
+SSH (Secure Shell) is a cryptographic protocol that enables secure remote access to computers and servers over an unsecured network. It encrypts data to prevent interception by attackers.
+How SSH Authentication Works
+SSH authentication is typically done using passwords or SSH keys. For GitHub, SSH keys are preferred for secure, passwordless authentication.
+1️⃣ Generate SSH Key Pair
+The user generates an SSH key pair (private key & public key) using:
+ssh-keygen -t rsa -b 4096 -C "your-email@example.com"
+
+The private key stays on the user's local machine.
+The public key is added to the remote server (e.g., GitHub).
+2️⃣ Add SSH Key to SSH Agent
+The SSH agent helps manage private keys and avoids repeated passphrase entry.
+The private key is added to the SSH agent:
+ssh-add ~/.ssh/id_rsa
+
+3️⃣ Add Public Key to GitHub
+Copy the public key (~/.ssh/id_rsa.pub) and add it to GitHub → Settings → SSH Keys.
+4️⃣ Authenticate with GitHub using SSH
+Test the connection:
+ssh -T git@github.com
+
+
+If successful, GitHub authenticates the user without requiring a password.
+How SSH Authentication Works (Summary)
+1️⃣ Generate an SSH key pair.
+2️⃣ Store the private key securely.
+3️⃣ Add the public key to the remote service (e.g., GitHub).
+4️⃣ Use SSH for secure, passwordless authentication.
+
+
+Jenkins pipeline explanation : 
+
+Agents and Steps in Jenkins Pipeline
+In Jenkins Pipeline, agents define where the pipeline or specific stages will run, while steps define what actions will be executed.
+1️⃣ Agents in Jenkins Pipeline
+An agent in Jenkins specifies the execution environment for a pipeline or stage. It determines which machine, container, or Jenkins node will run the build, test, or deployment process.
+Types of Agents:
+agent any → Runs the pipeline on any available Jenkins node.
+agent none → No default agent; each stage must specify its own agent.
+agent { label 'linux' } → Runs on a specific agent/node with the label ‘linux’.
+agent { docker 'maven:3-alpine' } → Runs inside a specified Docker container.
+2️⃣ Steps in Jenkins Pipeline
+A step is a single instruction inside a stage that tells Jenkins what to do. Steps are the fundamental execution units of a pipeline.
+Common Step Examples:
+sh 'command' → Executes a shell command.
+echo 'message' → Prints a message to the console.
+git 'repo-url' → Clones a Git repository.
+mvn clean install → Runs a Maven build.
+
+Feature	Description
+Agent	Specifies where the pipeline runs (machine, container, node).
+Steps	Defines what actions the pipeline performs (commands, scripts, build steps).
+
+What Are You Trying to Achieve in Jenkins with GitHub and Gradle/Maven?
+You're setting up a CI/CD pipeline in Jenkins where Jenkins:
+1️⃣ Clones your Maven/Gradle project from GitHub
+2️⃣ Builds it automatically using mvn or gradle
+3️⃣ Runs tests (if configured)
+4️⃣ Deploys the artifact (if required)
+
+
