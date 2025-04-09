@@ -1,0 +1,122 @@
+Software Maintenance and Refactoring
+Objective: Practice software maintenance and refactoring.
+Activities:
+Identify code smells in a given codebase.
+Refactor the code to improve readability and maintainability.
+Ensure that the refactored code passes all tests.
+Document the changes made.
+Deliverables: Submit the original and refactored code, along with a report on the refactoring process.
+
+#include <stdio.h>
+
+// Original code with code smells
+int calculate_and_print(int a, int b, int operation) {
+    int result;
+    if (operation == 1) { // 1 means addition
+        result = a + b;
+        printf("Addition result: %d\n", result);
+    } else if (operation == 2) { // 2 means subtraction
+        result = a - b;
+        printf("Subtraction result: %d\n", result);
+    } else if (operation == 3) { // 3 means multiplication
+        result = a * b;
+        printf("Multiplication result: %d\n", result);
+    } else {
+        printf("Invalid operation\n");
+        return -1; // Indicate error
+    }
+    return result;
+}
+
+int main() {
+    calculate_and_print(10, 5, 1);
+    calculate_and_print(10, 5, 2);
+    calculate_and_print(10, 5, 3);
+    calculate_and_print(10, 5, 4);
+
+    return 0;
+}
+
+// Refactored Code
+#include <stdio.h>
+
+// Using enums for better readability
+typedef enum {
+    ADDITION = 1,
+    SUBTRACTION,
+    MULTIPLICATION,
+    INVALID
+} Operation;
+
+// Function to perform the calculation
+int calculate(int a, int b, Operation op) {
+    switch (op) {
+        case ADDITION:
+            return a + b;
+        case SUBTRACTION:
+            return a - b;
+        case MULTIPLICATION:
+            return a * b;
+        default:
+            return -1; // Indicate error
+    }
+}
+
+// Function to print the result
+void print_result(int result, Operation op) {
+    switch (op) {
+        case ADDITION:
+            printf("Addition result: %d\n", result);
+            break;
+        case SUBTRACTION:
+            printf("Subtraction result: %d\n", result);
+            break;
+        case MULTIPLICATION:
+            printf("Multiplication result: %d\n", result);
+            break;
+        default:
+            printf("Invalid operation\n");
+    }
+}
+
+int main() {
+    int result;
+
+    result = calculate(10, 5, ADDITION);
+    print_result(result, ADDITION);
+
+    result = calculate(10, 5, SUBTRACTION);
+    print_result(result, SUBTRACTION);
+
+    result = calculate(10, 5, MULTIPLICATION);
+    print_result(result, MULTIPLICATION);
+
+    result = calculate(10, 5, INVALID);
+    print_result(result, INVALID);
+
+    return 0;
+}
+
+
+Code Smells and Refactoring:
+ * Magic Numbers:
+   * The original code used 1, 2, and 3 to represent operations. These are "magic numbers" as their meaning is not immediately clear.
+   * Refactoring: An enum called Operation was introduced to give meaningful names (ADDITION, SUBTRACTION, MULTIPLICATION) to these numbers.
+ * Long Method/Single Responsibility Principle:
+   * The calculate_and_print function performed both calculation and printing. This violates the Single Responsibility Principle.
+   * Refactoring: The code was split into two functions: calculate (for calculations) and print_result (for printing). This separates the concerns.
+ * Conditional Logic (if/else if):
+   * The original code used a series of if/else if statements to determine the operation.
+   * Refactoring: A switch statement was used, which is generally more readable and efficient for handling multiple cases based on a single variable.
+ * Readability:
+   * Using the enums, and separating the functions, makes the code easier to read and understand.
+ * Maintainability:
+   * If you need to add a new operation, it's now much easier to do so by adding a new enum value and a corresponding case in the calculate and print_result functions.
+ * Error Handling:
+   * Both versions handle invalid input, though the refactored version does so in a more readable way.
+How to Practice:
+ * Compile and Run: Compile and run both the original and refactored code to ensure they produce the same output for valid inputs.
+ * Add New Operations: Try adding a division operation to both versions of the code. Notice how much easier it is to do in the refactored version.
+ * Introduce More Complex Logic: Try adding more complex calculations or error handling to both versions.
+ * Write Test Cases: If you're comfortable with unit testing, write test cases to verify the correctness of both versions.
+ * Experiment: Change the inputs and observe the outputs. Try to break the code and see how it handles errors.
