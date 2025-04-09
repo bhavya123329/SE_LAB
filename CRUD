@@ -1,0 +1,560 @@
+
+Activities and Implementation
+1. Set up the Web Development Environment
+Install Node.js and npm (Node Package Manager): 
+oDownload and install Node.js from nodejs.org. npm comes bundled with Node.js.
+oVerify installation by running node -v and 
+oSet-ExecutionPolicy RemoteSigned -Scope CurrentUser
+onpm -v in your terminal.
+Heroku install using Heroku.org
+ 
+1. Project Setup:
+ * Create a project directory: mkdir task-app 
+                                                           cd task-app
+ * Initialize npm: npm init -y
+ * Install Express: npm install express
+ * Create a server.js file.
+ * Create a public directory.
+ * Create an index.html file inside the public directory.
+2. Backend (server.js):
+const express = require('express');
+const cors = require('cors'); // You'll need to install this: npm install cors
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(cors()); // Enable CORS for all routes
+app.use(express.json()); // Parse JSON requests
+app.use(express.static('public')); // Serve static files from 'public'
+
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
+  next();
+});
+
+let tasks = [
+  { id: 1, title: 'Learn Express', completed: false },
+  { id: 2, title: 'Build a simple app', completed: true },
+];
+let nextTaskId = 3;
+
+// Get all tasks
+app.get('/tasks', (req, res) => {
+  console.log('Sending all tasks:', tasks);
+  res.json(tasks);
+});
+
+// Add a new task
+app.post('/tasks', (req, res) => {
+  console.log('Received task creation request. Body:', req.body);
+  
+  if (!req.body || !req.body.title) {
+    console.log('Invalid request: Missing title');
+    return res.status(400).json({ error: 'Title is required' });
+  }
+  
+  try {
+    const newTask = {
+      id: nextTaskId++,
+      title: req.body.title,
+      completed: false,
+    };
+    tasks.push(newTask);
+    console.log('Task created successfully:', newTask);
+    res.status(201).json(newTask);
+  } catch (error) {
+    console.error('Error creating task:', error);
+    res.status(500).json({ error: 'Failed to create task' });
+  }
+});
+
+// Update a task
+app.put('/tasks/:id', (req, res) => {
+  const taskId = parseInt(req.params.id);
+  console.log(`Updating task ${taskId}. Body:`, req.body);
+  
+  try {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) {
+      console.log(`Task ${taskId} not found`);
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    task.title = req.body.title || task.title;
+    task.completed = req.body.completed !== undefined ? req.body.completed : task.completed;
+    console.log(`Task ${taskId} updated:`, task);
+    res.json(task);
+  } catch (error) {
+    console.error(`Error updating task ${taskId}:`, error);
+    res.status(500).json({ error: 'Failed to update task' });
+  }
+});
+
+// Delete a task
+app.delete('/tasks/:id', (req, res) => {
+  const taskId = parseInt(req.params.id);
+  console.log(`Deleting task ${taskId}`);
+  
+  try {
+    const initialLength = tasks.length;
+    tasks = tasks.filter((t) => t.id !== taskId);
+    
+    if (tasks.length === initialLength) {
+      console.log(`Task ${taskId} not found for deletion`);
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    console.log(`Task ${taskId} deleted successfully`);
+    res.status(200).json({ message: 'Task deleted successfully' });
+  } catch (error) {
+    console.error(`Error deleting task ${taskId}:`, error);
+    res.status(500).json({ error: 'Failed to delete task' });
+  }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
+
+
+3. Frontend (public/index.html):
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .error-message {
+            color: red;
+            padding: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+        .add-task {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #taskInput {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+        #addButton {
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #addButton:hover {
+            background: #45a049;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            animation: fadeIn 0.3s;
+        }
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        .task-checkbox {
+            margin-right: 10px;
+        }
+        .task-title {
+            flex-grow: 1;
+            word-break: break-word;
+        }
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .delete-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background: #d32f2f;
+        }
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #dff0d8;
+            color: #3c763d;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Task Manager</h1>
+    
+    <div id="errorMessage" class="error-message"></div>
+    
+    <div class="add-task">
+        <input type="text" id="taskInput" placeholder="Add a new task...">
+        <button id="addButton">Add Task</button>
+    </div>
+    
+    <div id="loading" class="loading">Loading tasks...</div>
+    
+    <ul id="taskList" class="task-list"></ul>
+    
+    <div id="status" class="status"></div>
+    
+    <script>
+        // DOM Elements
+        const taskInput = document.getElementById('taskInput');
+        const addButton = document.getElementById('addButton');
+        const taskList = document.getElementById('taskList');
+        const errorMessage = document.getElementById('errorMessage');
+        const statusDiv = document.getElementById('status');
+        const loadingDiv = document.getElementById('loading');
+        
+        // API URL - Change this if your server is running on a different port
+        const API_URL = 'http://localhost:3000';
+        
+        // Helper functions
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showStatus(message, isSuccess = true) {
+            statusDiv.textContent = message;
+            statusDiv.className = isSuccess ? 'status success' : 'status error';
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = 'status';
+            }, 3000);
+        }
+        
+        function showLoading(show = true) {
+            loadingDiv.style.display = show ? 'block' : 'none';
+        }
+        
+        // Load tasks from the server
+        async function loadTasks() {
+            showLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/tasks`);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch tasks: ${response.status} ${response.statusText}`);
+                }
+                
+                const tasks = await response.json();
+                renderTasks(tasks);
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                showError(`Failed to load tasks: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Render tasks to the DOM
+        function renderTasks(tasks) {
+            taskList.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                const emptyItem = document.createElement('li');
+                emptyItem.textContent = 'No tasks yet. Add one above!';
+                emptyItem.className = 'task-item empty';
+                taskList.appendChild(emptyItem);
+                return;
+            }
+            
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = `task-item ${task.completed ? 'completed' : ''}`;
+                li.dataset.id = task.id;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'task-checkbox';
+                checkbox.checked = task.completed;
+                checkbox.addEventListener('change', () => updateTask(task.id, checkbox.checked));
+                
+                const title = document.createElement('span');
+                title.className = 'task-title';
+                title.textContent = task.title;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.addEventListener('click', () => deleteTask(task.id));
+                
+                li.appendChild(checkbox);
+                li.appendChild(title);
+                li.appendChild(deleteBtn);
+                taskList.appendChild(li);
+            });
+        }
+        
+        // Add a new task
+        async function addTask() {
+            const title = taskInput.value.trim();
+            
+            if (!title) {
+                showError('Please enter a task title');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/tasks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to add task: ${response.status} ${response.statusText}`);
+                }
+                
+                const newTask = await response.json();
+                taskInput.value = '';
+                showStatus('Task added successfully!');
+                await loadTasks();
+            } catch (error) {
+                console.error('Error adding task:', error);
+                showError(`Failed to add task: ${error.message}`);
+            }
+        }
+        
+        // Update a task's completion status
+        async function updateTask(id, completed) {
+            try {
+                const response = await fetch(`${API_URL}/tasks/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ completed })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to update task: ${response.status} ${response.statusText}`);
+                }
+                
+                const updatedTask = await response.json();
+                showStatus(`Task ${completed ? 'completed' : 'reopened'}!`);
+                
+                // Update UI for the specific task without reloading all tasks
+                const taskItem = document.querySelector(`.task-item[data-id="${id}"]`);
+                if (taskItem) {
+                    taskItem.className = `task-item ${completed ? 'completed' : ''}`;
+                }
+            } catch (error) {
+                console.error('Error updating task:', error);
+                showError(`Failed to update task: ${error.message}`);
+                await loadTasks(); // Reload to get current state
+            }
+        }
+        
+        // Delete a task
+        async function deleteTask(id) {
+            try {
+                const response = await fetch(`${API_URL}/tasks/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to delete task: ${response.status} ${response.statusText}`);
+                }
+                
+                showStatus('Task deleted successfully!');
+                await loadTasks();
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                showError(`Failed to delete task: ${error.message}`);
+            }
+        }
+        
+        // Event listeners
+        addButton.addEventListener('click', addTask);
+        
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+        
+        // Load tasks when page loads
+        document.addEventListener('DOMContentLoaded', loadTasks);
+    </script>
+</body>
+</html>
+
+4. Running the Application:
+ * Open your terminal in the simple-task-app directory.
+ * Run node server.js.
+ * Open your web browser and go to http://localhost:3000.
+Explanation:
+ * Backend (server.js):
+   * Sets up an Express server.
+   * Handles GET, POST, PUT, and DELETE requests for tasks.
+   * Uses an in-memory array (tasks) to store tasks (for simplicity).
+   * Parses JSON requests.
+   * Serves static files from the public folder.
+ * Frontend (public/index.html):
+   * Basic HTML structure with input fields and a task list.
+   * JavaScript code to fetch tasks from the server and render them.
+   * Handles adding, updating (checkbox), and deleting tasks using fetch API calls.
+   * Dynamically generates html list items using the javascript fetch response.
+ * Key Points:
+   * This is a very basic example. In a real-world application, you would use a database (e.g., MongoDB, PostgreSQL) for persistent storage.
+
+
+   * Error handling and input validation are minimal.
+   * For a more complex frontend, you would typically use a framework like React, Vue, or Angular.
+This example provides a clear and functional foundation for understanding basic web application development.
+
+// code to test connectivity
+const express = require('express');
+const app = express();
+const PORT = 3000;
+
+app.get('/', (req, res) => {
+    res.send('Hello, World!');
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+
+
+Output
+
+Server listening on port 3000
+GET /tasks - 2025-04-01T10:24:58.209Z
+Sending all tasks: [
+  { id: 1, title: 'Learn Express', completed: false },
+  { id: 2, title: 'Build a simple app', completed: true }
+]
+POST /tasks - 2025-04-01T10:25:16.036Z
+Received task creation request. Body: { title: 'learn express' }
+Task created successfully: { id: 3, title: 'learn express', completed: false }
+GET /tasks - 2025-04-01T10:25:16.043Z
+Sending all tasks: [
+  { id: 1, title: 'Learn Express', completed: false },
+  { id: 2, title: 'Build a simple app', completed: true },
+  { id: 3, title: 'learn express', completed: false }
+]
+DELETE /tasks/2 - 2025-04-01T10:25:20.714Z
+Deleting task 2
+Task 2 deleted successfully
+GET /tasks - 2025-04-01T10:25:20.720Z
+Sending all tasks: [
+  { id: 1, title: 'Learn Express', completed: false },
+  { id: 3, title: 'learn express', completed: false }
+]
+POST /tasks - 2025-04-01T10:25:32.955Z
+Received task creation request. Body: { title: 'create new web page' }
+Task created successfully: { id: 4, title: 'create new web page', completed: false }
+GET /tasks - 2025-04-01T10:25:32.961Z
+Sending all tasks: [
+  { id: 1, title: 'Learn Express', completed: false },
+  { id: 3, title: 'learn express', completed: false },
+  { id: 4, title: 'create new web page', completed: false }
+]
+DELETE /tasks/4 - 2025-04-01T10:25:36.040Z
+Deleting task 4
+Task 4 deleted successfully
+GET /tasks - 2025-04-01T10:25:36.045Z
+Sending all tasks: [
+  { id: 1, title: 'Learn Express', completed: false },
+  { id: 3, title: 'learn express', completed: false }
+]
+PUT /tasks/1 - 2025-04-01T10:26:40.971Z
+Updating task 1. Body: { completed: true }
+Task 1 updated: { id: 1, title: 'Learn Express', completed: true }
+PUT /tasks/1 - 2025-04-01T10:26:43.234Z
+Updating task 1. Body: { completed: false }
+Task 1 updated: { id: 1, title: 'Learn Express', completed: false }
+PUT /tasks/1 - 2025-04-01T10:26:45.271Z
+Updating task 1. Body: { completed: true }
+Task 1 updated: { id: 1, title: 'Learn Express', completed: true }
+POST /tasks - 2025-04-01T10:26:59.445Z
+Received task creation request. Body: { title: 'update express' }
+Task created successfully: { id: 5, title: 'update express', completed: false }
+GET /tasks - 2025-04-01T10:26:59.451Z
+Sending all tasks: [
+  { id: 1, title: 'Learn Express', completed: true },
+  { id: 3, title: 'learn express', completed: false },
+  { id: 5, title: 'update express', completed: false }
+]
+PUT /tasks/5 - 2025-04-01T10:27:04.821Z
+Updating task 5. Body: { completed: true }
+Task 5 updated: { id: 5, title: 'update express', completed: true }
+PUT /tasks/3 - 2025-04-01T10:27:12.204Z
+Updating task 3. Body: { completed: true }
+Task 3 updated: { id: 3, title: 'learn express', completed: true }
+DELETE /tasks/5 - 2025-04-01T10:27:14.655Z
+Deleting task 5
+Task 5 deleted successfully
+GET /tasks - 2025-04-01T10:27:14.660Z
+Sending all tasks: [
+  { id: 1, title: 'Learn Express', completed: true },
+  { id: 3, title: 'learn express', completed: true }
+]
+DELETE /tasks/3 - 2025-04-01T10:27:17.003Z
+Deleting task 3
+Task 3 deleted successfully
+GET /tasks - 2025-04-01T10:27:17.016Z
+Sending all tasks: [ { id: 1, title: 'Learn Express', completed: true } ]
+DELETE /tasks/1 - 2025-04-01T10:27:18.168Z
+Deleting task 1
+Task 1 deleted successfully
+GET /tasks - 2025-04-01T10:27:18.174Z
+Sending all tasks: []
