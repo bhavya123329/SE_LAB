@@ -1,0 +1,144 @@
+Unit Testing with CUnit
+This  will guide you through the process of unit testing C code with CUnit, covering installation, test writing, execution, reporting, and interpretation.
+1. Install CUnit:
+Linux (Debian/Ubuntu): 
+Bash
+sudo apt-get update
+sudo apt-get install libcunit1 libcunit1-dev
+Linux (Fedora/CentOS): 
+Bash
+sudo dnf install CUnit-devel
+macOS (Homebrew): 
+Bash
+brew install cunit
+Windows (MinGW/MSYS2): 
+oYou can download pre-built binaries or compile CUnit from source. Look for instructions on the CUnit website or MinGW/MSYS2 package repositories.
+oC Unit Testing Framework download | SourceForge.net
+2. Write the C Code (arithmetic.c):
+C
+// arithmetic.c
+#include "arithmetic.h"
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int subtract(int a, int b) {
+    return a - b;
+}
+
+int multiply(int a, int b) {
+    return a * b;
+}
+
+int divide(int a, int b) {
+    if (b == 0) {
+        return 0; // Handle division by zero (you might want to throw an error in a real application)
+    }
+    return a / b;
+}
+3. Create the Header File (arithmetic.h):
+C
+// arithmetic.h
+#ifndef ARITHMETIC_H
+#define ARITHMETIC_H
+
+int add(int a, int b);
+int subtract(int a, int b);
+int multiply(int a, int b);
+int divide(int a, int b);
+
+#endif
+4. Write the Unit Tests (test_arithmetic.c):
+C
+// test_arithmetic.c
+#include <CUnit/Basic.h>
+#include "arithmetic.h"
+
+void test_add(void) {
+    CU_ASSERT_EQUAL(add(2, 3), 5);
+    CU_ASSERT_EQUAL(add(-1, 1), 0);
+    CU_ASSERT_EQUAL(add(-1, -1), -2);
+}
+
+void test_subtract(void) {
+    CU_ASSERT_EQUAL(subtract(5, 3), 2);
+    CU_ASSERT_EQUAL(subtract(3, 5), -2);
+    CU_ASSERT_EQUAL(subtract(0, 0), 0);
+}
+
+void test_multiply(void) {
+    CU_ASSERT_EQUAL(multiply(2, 3), 6);
+    CU_ASSERT_EQUAL(multiply(-2, 3), -6);
+    CU_ASSERT_EQUAL(multiply(0, 5), 0);
+}
+
+void test_divide(void) {
+    CU_ASSERT_EQUAL(divide(6, 3), 2);
+    CU_ASSERT_EQUAL(divide(10, 2), 5);
+    CU_ASSERT_EQUAL(divide(5, 2), 2); // Integer division
+    CU_ASSERT_EQUAL(divide(5, 0), 0); // Test division by zero
+}
+
+int main(void) {
+    CU_pSuite suite = NULL;
+
+    if (CUE_SUCCESS != CU_initialize_registry()) {
+        return CU_get_error();
+    }
+
+    suite = CU_add_suite("Arithmetic Suite", NULL, NULL);
+    if (NULL == suite) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+
+    if ((NULL == CU_add_test(suite, "test of add()", test_add)) ||
+        (NULL == CU_add_test(suite, "test of subtract()", test_subtract)) ||
+        (NULL == CU_add_test(suite, "test of multiply()", test_multiply)) ||
+        (NULL == CU_add_test(suite, "test of divide()", test_divide))) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+
+    CU_basic_set_mode(CU_BRM_VERBOSE); // Or CU_BRM_NORMAL
+    CU_basic_run_tests();
+    CU_cleanup_registry();
+    return CU_get_error();
+}
+5. Compile and Link:
+Bash
+gcc arithmetic.c test_arithmetic.c -o test_arithmetic -lcunit
+6. Execute Tests:
+Bash
+./test_arithmetic
+7. Interpret Test Results and Improve Code Quality:
+The output will show the results of each test case.  CU_ASSERT_EQUAL(add(2, 2), 5)
+CU_ASSERT_EQUAL checks if two values are equal. If a test fails, CUnit will report the failure. FALSE
+If a test fails, examine the code and the test case to identify the error. 
+Either change value to 4 or treat it as negative case
+Improve your code based on the test results. For example, you might add more robust error handling, or adjust the logic of your functions.
+Add more test cases to increase code coverage. Think about edge cases and boundary conditions.
+8. Generate a Report (Optional):
+CUnit's basic output is sufficient for many purposes. For more detailed reports, you can use other CUnit output modes or integrate CUnit with other testing frameworks.
+CU_BRM_NORMAL: Provides a more concise output.
+XML output: CUnit can be modified to write test results in XML format, which can be parsed by other tools.
+Example output of a successful run:
+CUnit - A unit testing framework for C - Version 2.1-3
+Basic interface - verbose output
+
+Suite: Arithmetic Suite
+  Test: test of add() ...passed
+  Test: test of subtract() ...passed
+  Test: test of multiply() ...passed
+  Test: test of divide() ...passed
+
+Run Summary:    Type  Total     Ran Passed Failed Inactive
+              suites      1       1      -      -        -
+               tests      4       4      4      0        -
+             asserts     12      12     12      0        -
+Deliverables:
+1.arithmetic.c: The C code for the arithmetic functions.
+2.arithmetic.h: The header file.
+3.test_arithmetic.c: The CUnit test code.
+4.The output of ./test_arithmetic: This is your test report.
