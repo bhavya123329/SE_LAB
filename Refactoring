@@ -97,6 +97,8 @@ int main() {
     return 0;
 }
 
+//o/p> gcc p1.c -o p1
+//>p1
 
 Code Smells and Refactoring:
  * Magic Numbers:
