@@ -1,0 +1,175 @@
+//bank.c
+#include "bank.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+Bank* create_bank() {
+    Bank* bank = (Bank*)malloc(sizeof(Bank));
+    if (bank) {
+        bank->account_count = 0;
+    }
+    return bank;
+}
+
+bool create_account(Bank* bank, const char* account_number, double initial_balance) {
+    if (bank->account_count >= 100) return false; // Max accounts reached
+    if (get_account(bank, account_number)) return false; // Account exists
+
+    Account* new_account = (Account*)malloc(sizeof(Account));
+    if (!new_account) return false;
+
+    strncpy(new_account->account_number, account_number, sizeof(new_account->account_number) - 1);
+    new_account->account_number[sizeof(new_account->account_number) - 1] = '\0'; // Ensure null termination
+    new_account->balance = initial_balance;
+
+    bank->accounts[bank->account_count++] = new_account;
+    return true;
+}
+
+Account* get_account(Bank* bank, const char* account_number) {
+    for (int i = 0; i < bank->account_count; i++) {
+        if (strcmp(bank->accounts[i]->account_number, account_number) == 0) {
+            return bank->accounts[i];
+        }
+    }
+    return NULL;
+}
+
+bool transaction_deposit(Account* account, double amount) {
+    if (amount > 0) {
+        account->balance += amount;
+        return true;
+    }
+    return false;
+}
+
+bool transaction_withdraw(Account* account, double amount) {
+    if (amount > 0 && account->balance >= amount) {
+        account->balance -= amount;
+        return true;
+    }
+    return false;
+}
+
+Transaction* create_transaction() {
+    Transaction* transaction = (Transaction*)malloc(sizeof(Transaction));
+    if (transaction) {
+        transaction->deposit = transaction_deposit;
+        transaction->withdraw = transaction_withdraw;
+    }
+    return transaction;
+}
+
+bool deposit(Bank* bank, const char* account_number, double amount) {
+    Account* account = get_account(bank, account_number);
+    if (account) {
+        Transaction* transaction = create_transaction();
+        bool result = transaction->deposit(account, amount);
+        free(transaction);
+        return result;
+    }
+    return false;
+}
+
+bool withdraw(Bank* bank, const char* account_number, double amount) {
+    Account* account = get_account(bank, account_number);
+    if (account) {
+        Transaction* transaction = create_transaction();
+        bool result = transaction->withdraw(account, amount);
+        free(transaction);
+        return result;
+    }
+    return false;
+}
+
+
+//bank.h
+#ifndef BANK_H
+#define BANK_H
+
+#include <stdbool.h>
+
+typedef struct {
+    char account_number[20];
+    double balance;
+} Account;
+
+typedef struct {
+    Account* accounts[100]; // Array of account pointers
+    int account_count;
+} Bank;
+
+typedef struct {
+    bool (*deposit)(Account* account, double amount);
+    bool (*withdraw)(Account* account, double amount);
+} Transaction;
+
+// Bank functions
+Bank* create_bank();
+bool create_account(Bank* bank, const char* account_number, double initial_balance);
+Account* get_account(Bank* bank, const char* account_number);
+bool deposit(Bank* bank, const char* account_number, double amount);
+bool withdraw(Bank* bank, const char* account_number, double amount);
+
+// Transaction functions
+bool transaction_deposit(Account* account, double amount);
+bool transaction_withdraw(Account* account, double amount);
+Transaction* create_transaction();
+
+#endif // BANK_H
+
+
+
+
+//test_bank.c
+#include <stdlib.h>
+#include "bank.h"
+#include <stdio.h>
+
+int main() {
+    Bank* bank = create_bank();
+    create_account(bank, "12345", 1000.0);
+    Account* account = get_account(bank, "12345");
+
+    if (deposit(bank, "12345", 500.0)) {
+        printf("Deposit successful. New balance: %.2f\n", account->balance);
+    } else {
+        printf("Deposit failed.\n");
+    }
+
+    if (withdraw(bank, "12345", 300.0)) {
+        printf("Withdrawal successful. New balance: %.2f\n", account->balance);
+    } else {
+        printf("Withdrawal failed.\n");
+    }
+
+    if (!withdraw(bank, "12345", 2000.0)) {
+        printf("Insufficient funds check passed. Balance: %.2f\n", account->balance);
+    } else {
+        printf("Insufficient funds check failed.\n");
+    }
+
+    if (!deposit(bank, "invalid", 100.0)) {
+        printf("Invalid account deposit check passed.\n");
+    } else {
+        printf("Invalid account deposit check failed.\n");
+    }
+
+    if (!withdraw(bank, "invalid", 100.0)) {
+        printf("Invalid account withdraw check passed.\n");
+    } else {
+        printf("Invalid account withdraw check failed.\n");
+    }
+
+    // Memory cleanup
+    for (int i = 0; i < bank->account_count; i++) {
+        free(bank->accounts[i]);
+    }
+    free(bank);
+
+    return 0;
+}
+//execute by: gcc bank.c test_bank.c -o bank_test
+//or only bank_test
+//or ./bank_test
