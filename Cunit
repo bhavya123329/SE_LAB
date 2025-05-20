@@ -112,6 +112,18 @@ gcc arithmetic.c test_arithmetic.c -o test_arithmetic -lcunit
 6. Execute Tests:
 Bash
 ./test_arithmetic
+
+
+MSYS2:
+pacman -S mingw-w64-ucrt-x86_64-gcc  
+pacman -S mingw-w64-x86_64-toolchain base-devel  
+pacman -S mingw-w64-x86_64-cunit  
+pkg-config --modversion cunit  
+cd "/c/Users/sanarama//Desktop/SE lab/unit testing"  
+gcc arithmetic.c test_arithmetic.c -o test_arithmetic.exe -lcunit  
+./test_arithmetic.exe
+
+
 7. Interpret Test Results and Improve Code Quality:
 The output will show the results of each test case.  CU_ASSERT_EQUAL(add(2, 2), 5)
 CU_ASSERT_EQUAL checks if two values are equal. If a test fails, CUnit will report the failure. FALSE
@@ -142,3 +154,5 @@ Deliverables:
 2.arithmetic.h: The header file.
 3.test_arithmetic.c: The CUnit test code.
 4.The output of ./test_arithmetic: This is your test report.
+
+
