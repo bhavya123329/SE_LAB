@@ -30,6 +30,19 @@ main: main.c
 clean:
         rm -f main
 
+CURRECT MAKEFILE:
+CC = gcc
+CFLAGS = -Wall -Wextra
+
+all: main
+
+main: main.c
+	$(CC) $(CFLAGS) main.c -o main
+
+clean:
+	rm -f main
+
+
 Explanation of Makefile:
  * CC = gcc: Sets the compiler to GCC.
  * CFLAGS = -Wall -Wextra: Sets compiler flags for warnings.
